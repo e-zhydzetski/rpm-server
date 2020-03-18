@@ -16,8 +16,10 @@ RUN cd cmd/rpm-server && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags
 # final stage
 FROM centos:7.7.1908
 RUN yum install -y createrepo
-RUN mkdir -p /opt/repos/7/updates/x86_64
-ENV REPO_PATH /opt/repos/7/updates/x86_64
-ENTRYPOINT ["./rpm-server"]
 EXPOSE 8080
+ENV LISTEN_ADDR :8080
+RUN mkdir -p /opt/repos/7/updates/x86_64
+ENV PUSH_PATH /opt/repos/7/updates/x86_64
+ENV REPOS_ROOT /opt/repos
+ENTRYPOINT ["./rpm-server"]
 COPY --from=builder /workspace/cmd/rpm-server/rpm-server ./rpm-server

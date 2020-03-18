@@ -13,8 +13,6 @@ import (
 	"syscall"
 )
 
-const addr = ":8080"
-
 func main() {
 	ctx := context.Background()
 
@@ -32,18 +30,27 @@ func main() {
 	})
 
 	cfg := rpmserver.Config{
-		AccessToken:    os.Getenv("ACCESS_TOKEN"),
-		RepositoryPath: os.Getenv("REPO_PATH"),
+		ListenAddr:    os.Getenv("LISTEN_ADDR"),
+		AccessToken:   os.Getenv("ACCESS_TOKEN"),
+		PushRepoPath:  os.Getenv("PUSH_PATH"),
+		ReposRootPath: os.Getenv("REPOS_ROOT"),
+	}
+	if cfg.ListenAddr == "" {
+		cfg.ListenAddr = ":8080"
 	}
 
 	r := chi.NewRouter()
 
 	handler := rpmserver.NewHandler(cfg)
 	r.Mount("/api", handler)
-	r.Mount("/", http.FileServer(http.Dir(cfg.RepositoryPath)))
+	r.Mount("/repos",
+		http.StripPrefix("/repos",
+			rpmserver.NewFileServer(cfg.ReposRootPath),
+		),
+	)
 
 	server := &http.Server{
-		Addr:    addr,
+		Addr:    cfg.ListenAddr,
 		Handler: chi.ServerBaseContext(ctx, r),
 	}
 	g.Go(func() error {
@@ -51,7 +58,7 @@ func main() {
 		return server.Shutdown(context.Background())
 	})
 	g.Go(func() error {
-		log.Println("start listening at", addr, "...")
+		log.Println("start listening at", cfg.ListenAddr, "...")
 		return server.ListenAndServe()
 	})
 

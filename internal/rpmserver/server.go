@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 import "github.com/go-chi/chi"
 
@@ -22,7 +23,17 @@ func NewHandler(cfg Config) http.Handler {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		fName := filepath.Join(cfg.RepositoryPath, h.Filename)
+
+		pkgFileName := h.Filename
+		pkgFileName = filepath.Base(pkgFileName)
+		if !strings.HasSuffix(pkgFileName, ".rpm") {
+			log.Println("invalid package file extension, only *.rpm supported:", pkgFileName)
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("invalid package file extension, only *.rpm supported"))
+			return
+		}
+
+		fName := filepath.Join(cfg.PushRepoPath, pkgFileName)
 		f, err := os.OpenFile(
 			fName,
 			os.O_WRONLY|os.O_CREATE|os.O_EXCL, // will fail if file already exists
@@ -32,6 +43,7 @@ func NewHandler(cfg Config) http.Handler {
 			if os.IsExist(err) {
 				log.Println("package already exists:", err)
 				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte("package already exists"))
 				return
 			}
 			log.Println("can't create file:", err)
@@ -46,7 +58,7 @@ func NewHandler(cfg Config) http.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		cmd := exec.Command("createrepo", "-v", cfg.RepositoryPath)
+		cmd := exec.Command("createrepo", "-v", cfg.PushRepoPath)
 		err = cmd.Run()
 		if err != nil {
 			_ = os.Remove(fName)

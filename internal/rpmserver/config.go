@@ -1,6 +1,8 @@
 package rpmserver
 
 type Config struct {
-	AccessToken    string
-	RepositoryPath string
+	ListenAddr    string
+	AccessToken   string
+	PushRepoPath  string
+	ReposRootPath string
 }
