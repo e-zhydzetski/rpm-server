@@ -66,6 +66,8 @@ func NewHandler(cfg Config) http.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		log.Println("package", pkgFileName, "successfully added to repo", cfg.PushRepoPath)
 	})
 	return r
 }
