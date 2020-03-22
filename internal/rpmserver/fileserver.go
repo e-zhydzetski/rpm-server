@@ -20,6 +20,9 @@ func (sfs safeFileSystem) Open(path string) (http.File, error) {
 	}
 
 	s, err := f.Stat()
+	if err != nil {
+		return nil, os.ErrPermission
+	}
 	if s.IsDir() {
 		return nil, os.ErrPermission
 	}

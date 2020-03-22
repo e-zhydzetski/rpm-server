@@ -58,7 +58,10 @@ func NewHandler(cfg Config) http.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		//nolint:gosec // G204(shell injection) safe as command arg is a configuration parameter
 		cmd := exec.Command("createrepo", "-v", cfg.PushRepoPath)
+
 		err = cmd.Run()
 		if err != nil {
 			_ = os.Remove(fName)
