@@ -17,12 +17,20 @@ func NewHandler(cfg Config) http.Handler {
 	r := chi.NewRouter()
 	r.Use(NewHTTPAuthInterceptor(cfg.AccessToken))
 	r.Post("/packages", func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r.MultipartForm != nil {
+				if err := r.MultipartForm.RemoveAll(); err != nil {
+					log.Println("can't clean multipart tmp files:", err)
+				}
+			}
+		}()
 		pr, h, err := r.FormFile("package")
 		if err != nil {
 			log.Println("can't get package binary:", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		defer pr.Close()
 
 		pkgFileName := h.Filename
 		pkgFileName = filepath.Base(pkgFileName)
