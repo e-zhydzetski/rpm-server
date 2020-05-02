@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi"
 	"golang.org/x/sync/errgroup"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -51,7 +52,10 @@ func main() {
 
 	server := &http.Server{
 		Addr:    cfg.ListenAddr,
-		Handler: chi.ServerBaseContext(ctx, r),
+		Handler: r,
+	}
+	server.BaseContext = func(_ net.Listener) context.Context {
+		return ctx
 	}
 	g.Go(func() error {
 		<-ctx.Done()
